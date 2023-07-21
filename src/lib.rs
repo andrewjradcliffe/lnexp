@@ -192,22 +192,22 @@ mod tests {
 
         #[test]
         fn logit_identity() {
-            let xs: Vec<f64> = vec![5e-324, 0.0, 0.5, 1.0];
+            let eps = f64::EPSILON;
+            let xs: Vec<f64> = vec![5e-324, 0.0, 0.5, 1.0 - eps, 1.0 - eps / 2.0, 1.0];
             for x in xs {
                 assert_eq!(x.logit().inv_logit(), x);
             }
 
             // Approximate identity
-            let eps = f64::EPSILON;
-            let xs: Vec<f64> = vec![
-                eps,
+            let xs: Vec<f64> = vec![eps, eps / 2.0, 0.5 - eps, 0.5 + eps];
+            let epsilons: Vec<f64> = vec![
+                // eps^(3/2) is a loose but acceptable alternative to eps^2
+                eps * eps.sqrt(),
+                eps * eps.sqrt() / 2.0,
                 eps / 2.0,
-                1.0 - eps,
-                1.0 - eps / 2.0,
-                0.5 - eps,
-                0.5 + eps,
+                eps / 2.0,
             ];
-            for x in xs {
+            for (x, eps) in xs.into_iter().zip(epsilons.into_iter()) {
                 assert!((x.logit().inv_logit() - x).abs() < eps);
             }
         }
