@@ -1,5 +1,10 @@
 mod consts;
 
+/// The `LnExp` trait extends the functionality afforded by a `libm`, providing
+/// careful evaluation of compositions of the `ln`, `exp`, `ln_1p` and `exp_m1`
+/// functions so as to avoid underflow/overflow. Furthermore, in some cases, the
+/// methods provided by this trait result in fewer calls than the equivalent
+/// function composition.
 pub trait LnExp {
     /// Returns `ln(1 - exp(x))`, computed as described in
     /// [Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))](http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf).
@@ -22,7 +27,7 @@ pub trait LnExp {
     fn ln_1m_exp(&self) -> Self;
 
     /// Returns `ln(1 + exp(x))`, computed as described in Maechler (2012),
-    /// for which a theoretical basis has been provided by [cossio (2022)](https://github.com/JuliaStats/LogExpFunctions.jl/files/8218470/log1pexp.pdf).
+    /// for which a theoretical basis has been provided by [cossio (2022), untitled](https://github.com/JuliaStats/LogExpFunctions.jl/files/8218470/log1pexp.pdf).
     /// The inverse of this function is `ln_exp_m1`.
     ///
     /// # Examples
@@ -50,7 +55,7 @@ pub trait LnExp {
     /// ```
     fn ln_exp_m1(&self) -> Self;
 
-    /// Returns the logit, mapping from the closed interval [0,1] to a real number.
+    /// Returns the logit, mapping from the closed interval \[0,1\] to a real number.
     ///
     /// # Examples
     /// ```
@@ -67,7 +72,7 @@ pub trait LnExp {
     /// ```
     fn logit(&self) -> Self;
 
-    /// Returns the inverse-logit mapping from a real number to the closed interval [0,1].
+    /// Returns the inverse-logit mapping from a real number to the closed interval \[0,1\].
     /// This is the inverse of `logit`.
     ///
     /// # Examples
@@ -93,7 +98,7 @@ pub trait LnExp {
     /// assert_neq!(e / (1.0 + e), 0.0);
     ///
     /// // Smooth upper bound by enforcing that values greater than
-    /// // `logit(1.0 - epsilon/2.0)` map to 1.0 when the inverse-logit is applied.
+    /// // `logit(1.0 - epsilon / 2.0)` map to 1.0 when the inverse-logit is applied.
     /// let x: f64 = 36.8; // Slightly larger than upper bound
     /// assert_eq!(x.inv_logit(), 1.0);
     /// // compare with naive computation

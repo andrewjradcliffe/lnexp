@@ -5,7 +5,10 @@
 Provides a trait (`LnExp`) for floating-point types to perform careful
 evaluation of compositions of `ln`, `ln_1p`, `exp` and `exp_m1`.
 Implementations are provided for `f64` and `f32`; see the
-documentation for details.
+documentation for details.  The most common domain in which such
+compositions appear is statistical computing, but the advantages
+afforded by the implementations are neither specific nor limited to
+such a domain.
 
 ## License
 
