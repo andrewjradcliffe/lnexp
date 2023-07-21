@@ -142,8 +142,12 @@ mod tests {
 
             let x: f64 = 5.0e-324;
             assert!(x.ln_1m_exp().is_nan());
+            let x: f64 = f64::MIN_POSITIVE;
+            assert!(x.ln_1m_exp().is_nan());
 
             let x: f64 = -5.0e-324;
+            assert!(x.ln_1m_exp().is_finite());
+            let x: f64 = -f64::MIN_POSITIVE;
             assert!(x.ln_1m_exp().is_finite());
         }
 
@@ -212,6 +216,8 @@ mod tests {
 
             let x: f64 = -5.0e-324;
             assert!(x.ln_exp_m1().is_nan());
+            let x: f64 = -f64::MIN_POSITIVE;
+            assert!(x.ln_exp_m1().is_nan());
 
             let x: f64 = f64::INFINITY;
             assert_eq!(x.ln_exp_m1(), f64::INFINITY);
@@ -226,8 +232,9 @@ mod tests {
             }
 
             // Approximate identity
-            let xs: Vec<f64> = vec![eps / 2.0, eps, 0.5 - eps, 0.5 + eps];
+            let xs: Vec<f64> = vec![f64::MIN_POSITIVE, eps / 2.0, eps, 0.5 - eps, 0.5 + eps];
             let epsilons: Vec<f64> = vec![
+                f64::MIN_POSITIVE,
                 // eps^(3/2) is a loose but acceptable alternative to eps^2
                 eps * eps.sqrt() / 2.0,
                 eps * eps.sqrt(),
@@ -329,8 +336,12 @@ mod tests {
 
             let x: f32 = 1.0e-45;
             assert!(x.ln_1m_exp().is_nan());
+            let x: f32 = f32::MIN_POSITIVE;
+            assert!(x.ln_1m_exp().is_nan());
 
             let x: f32 = -1.0e-45;
+            assert!(x.ln_1m_exp().is_finite());
+            let x: f32 = -f32::MIN_POSITIVE;
             assert!(x.ln_1m_exp().is_finite());
         }
 
@@ -398,6 +409,8 @@ mod tests {
 
             let x: f32 = -1.0e-45;
             assert!(x.ln_exp_m1().is_nan());
+            let x: f32 = -f32::MIN_POSITIVE;
+            assert!(x.ln_exp_m1().is_nan());
 
             let x: f32 = f32::INFINITY;
             assert_eq!(x.ln_exp_m1(), f32::INFINITY);
@@ -412,7 +425,14 @@ mod tests {
             }
 
             // Approximate identity
-            let xs: Vec<f32> = vec![eps / 2.0, eps, 0.5 - eps, 0.5 + eps, 1.0 - eps / 2.0];
+            let xs: Vec<f32> = vec![
+                f32::MIN_POSITIVE,
+                eps / 2.0,
+                eps,
+                0.5 - eps,
+                0.5 + eps,
+                1.0 - eps / 2.0,
+            ];
             for x in xs {
                 assert!((x.logit().inv_logit() - x).abs() < eps);
             }
