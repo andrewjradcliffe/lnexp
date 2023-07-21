@@ -273,7 +273,7 @@ mod tests {
 
         #[test]
         fn logit_smooth_lower_bound() {
-            let x: f64 = 5e-324;
+            let x: f64 = 5.0e-324;
             let rhs: f64 = -744.4400719213812;
             assert_eq!(x.logit(), rhs);
 
