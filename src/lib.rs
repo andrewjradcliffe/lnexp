@@ -1,3 +1,5 @@
+mod consts;
+
 pub trait LnExp {
     /// Returns `ln(1 - exp(x))`, computed as described in
     /// Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
@@ -21,82 +23,166 @@ pub trait LnExp {
     /// more carefully than the composition of functions `x.inv_logit().ln()`.
     fn ln_inv_logit(&self) -> Self;
 }
-impl LnExp for f64 {
-    // See: Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
-    // http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
-    fn ln_1m_exp(&self) -> f64 {
-        if *self < -std::f64::consts::LN_2 {
-            (-self.exp()).ln_1p()
-        } else {
-            (-self.exp_m1()).ln()
-        }
-    }
+macro_rules! impl_lnexp {
+    ( $f:ident ) => {
+        impl LnExp for $f {
+            // See: Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
+            // http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+            fn ln_1m_exp(&self) -> $f {
+                if *self < -std::$f::consts::LN_2 {
+                    (-self.exp()).ln_1p()
+                } else {
+                    (-self.exp_m1()).ln()
+                }
+            }
 
-    // See Section 3 of Maechler (2012).
-    fn ln_1p_exp(&self) -> f64 {
-        if *self <= -37.0 {
-            self.exp()
-        } else if *self <= 18.0 {
-            self.exp().ln_1p()
-        } else if *self <= 33.3 {
-            *self + (-*self).exp()
-        } else {
-            *self
-        }
-    }
+            // See Section 3 of Maechler (2012).
+            fn ln_1p_exp(&self) -> $f {
+                if *self <= crate::consts::$f::X0 {
+                    self.exp()
+                } else if *self <= crate::consts::$f::X1 {
+                    self.exp().ln_1p()
+                } else if *self <= crate::consts::$f::X2 {
+                    *self + (-*self).exp()
+                } else {
+                    *self
+                }
+            }
 
-    fn ln_exp_m1(&self) -> f64 {
-        // can skip inversion of *self < -37.0 case as log1p(exp(x))
-        // yields the same result as log(x).
-        if *self <= 18.0 {
-            self.exp_m1().ln()
-        } else if *self <= 33.3 {
-            *self - (-*self).exp()
-        } else {
-            *self
-        }
-    }
+            fn ln_exp_m1(&self) -> $f {
+                // can skip inversion of *self < -37.0 case as log1p(exp(x))
+                // yields the same result as log(x).
+                if *self <= crate::consts::$f::X1 {
+                    self.exp_m1().ln()
+                } else if *self <= crate::consts::$f::X2 {
+                    *self - (-*self).exp()
+                } else {
+                    *self
+                }
+            }
 
-    fn logit(&self) -> f64 {
-        (*self / (1.0 - *self)).ln()
-    }
+            fn logit(&self) -> $f {
+                (*self / (1.0 - *self)).ln()
+            }
 
-    fn inv_logit(&self) -> f64 {
-        // -744.4400719213812 is the logit of 5.0e-324, the smallest
-        // value which can be represented as a 64-bit floating point
-        // number.  Thus, anything less than logit(5.0e-324) must
-        // necessarily be zero in order to preserve the identity
-        // logit(inv_logit(x)) = x, and, alternately,
-        // inv_logit(logit(5.0e-324)) = 5.0e-324.
-        if *self < -744.4400719213812 {
-            0.0
-        } else {
-            // The next floating point number, 36.73680056967711,
-            // results in a value which when exponentiated is greater
-            // than ldexp(1.0, 53). When 1.0 is added to the
-            // exponentiated value, rounding causes the denominator to
-            // increase, leading to a value which is 2^-53 smaller
-            // than that computed from 36.7368005696771. Several of
-            // theThe function is no longer monotonic, thus, this is a
-            // suitable cutpoint.  In other words, logit(1.0 -
-            // f64::EPSILON / 2.0) = 36.7368005696771, thus, as the
-            // next linear-scale input (1.0) to `logit` maps to +inf,
-            // 1.0 must be returned for any value greater than
-            // logit(1.0 - f64::EPSILON / 2.0) when transforming from
-            // logit-scale to linear.
-            if *self > 36.7368005696771 {
-                1.0
-            } else {
-                let e = self.exp();
-                e / (1.0 + e)
+            fn inv_logit(&self) -> $f {
+                // -744.4400719213812 is the logit of 5.0e-324, the smallest
+                // value which can be represented as a 64-bit floating point
+                // number.  Thus, anything less than logit(5.0e-324) must
+                // necessarily be zero in order to preserve the identity
+                // logit(inv_logit(x)) = x, and, alternately,
+                // inv_logit(logit(5.0e-324)) = 5.0e-324.
+                if *self < crate::consts::$f::ILOGIT_LOWER {
+                    0.0
+                } else {
+                    // The next floating point number, 36.73680056967711,
+                    // results in a value which when exponentiated is greater
+                    // than ldexp(1.0, 53). When 1.0 is added to the
+                    // exponentiated value, rounding causes the denominator to
+                    // increase, leading to a value which is 2^-53 smaller
+                    // than that computed from 36.7368005696771. Several of
+                    // theThe function is no longer monotonic, thus, this is a
+                    // suitable cutpoint.  In other words, logit(1.0 -
+                    // f64::EPSILON / 2.0) = 36.7368005696771, thus, as the
+                    // next linear-scale input (1.0) to `logit` maps to +inf,
+                    // 1.0 must be returned for any value greater than
+                    // logit(1.0 - f64::EPSILON / 2.0) when transforming from
+                    // logit-scale to linear.
+                    if *self > crate::consts::$f::ILOGIT_UPPER {
+                        1.0
+                    } else {
+                        let e = self.exp();
+                        e / (1.0 + e)
+                    }
+                }
+            }
+
+            fn ln_inv_logit(&self) -> $f {
+                -(-*self).ln_1p_exp()
             }
         }
-    }
-
-    fn ln_inv_logit(&self) -> f64 {
-        -(-*self).ln_1p_exp()
-    }
+    };
 }
+
+impl_lnexp!(f64);
+impl_lnexp!(f32);
+
+// impl LnExp for f64 {
+//     // See: Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
+//     // http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+//     fn ln_1m_exp(&self) -> f64 {
+//         if *self < -std::f64::consts::LN_2 {
+//             (-self.exp()).ln_1p()
+//         } else {
+//             (-self.exp_m1()).ln()
+//         }
+//     }
+
+//     // See Section 3 of Maechler (2012).
+//     fn ln_1p_exp(&self) -> f64 {
+//         if *self <= crate::consts::f64::X0 {
+//             self.exp()
+//         } else if *self <= crate::consts::f64::X1 {
+//             self.exp().ln_1p()
+//         } else if *self <= crate::consts::f64::X2 {
+//             *self + (-*self).exp()
+//         } else {
+//             *self
+//         }
+//     }
+
+//     fn ln_exp_m1(&self) -> f64 {
+//         // can skip inversion of *self < -37.0 case as log1p(exp(x))
+//         // yields the same result as log(x).
+//         if *self <= crate::consts::f64::X1 {
+//             self.exp_m1().ln()
+//         } else if *self <= crate::consts::f64::X2 {
+//             *self - (-*self).exp()
+//         } else {
+//             *self
+//         }
+//     }
+
+//     fn logit(&self) -> f64 {
+//         (*self / (1.0 - *self)).ln()
+//     }
+
+//     fn inv_logit(&self) -> f64 {
+//         // -744.4400719213812 is the logit of 5.0e-324, the smallest
+//         // value which can be represented as a 64-bit floating point
+//         // number.  Thus, anything less than logit(5.0e-324) must
+//         // necessarily be zero in order to preserve the identity
+//         // logit(inv_logit(x)) = x, and, alternately,
+//         // inv_logit(logit(5.0e-324)) = 5.0e-324.
+//         if *self < crate::consts::f64::ILOGIT_LOWER {
+//             0.0
+//         } else {
+//             // The next floating point number, 36.73680056967711,
+//             // results in a value which when exponentiated is greater
+//             // than ldexp(1.0, 53). When 1.0 is added to the
+//             // exponentiated value, rounding causes the denominator to
+//             // increase, leading to a value which is 2^-53 smaller
+//             // than that computed from 36.7368005696771. Several of
+//             // theThe function is no longer monotonic, thus, this is a
+//             // suitable cutpoint.  In other words, logit(1.0 -
+//             // f64::EPSILON / 2.0) = 36.7368005696771, thus, as the
+//             // next linear-scale input (1.0) to `logit` maps to +inf,
+//             // 1.0 must be returned for any value greater than
+//             // logit(1.0 - f64::EPSILON / 2.0) when transforming from
+//             // logit-scale to linear.
+//             if *self > crate::consts::f64::ILOGIT_UPPER {
+//                 1.0
+//             } else {
+//                 let e = self.exp();
+//                 e / (1.0 + e)
+//             }
+//         }
+//     }
+
+//     fn ln_inv_logit(&self) -> f64 {
+//         -(-*self).ln_1p_exp()
+//     }
+// }
 
 // impl LnExp for f32 {
 //     fn ln_1m_exp(&self) -> f32 {
@@ -107,15 +193,37 @@ impl LnExp for f64 {
 //         }
 //     }
 
+//     fn ln_1p_exp(&self) -> f32 {
+//         if *self <= crate::consts::f32::X0 {
+//             self.exp()
+//         } else if *self <= crate::consts::f32::X1 {
+//             self.exp().ln_1p()
+//         } else if *self <= crate::consts::f32::X2 {
+//             *self + (-*self).exp()
+//         } else {
+//             *self
+//         }
+//     }
+
+//     fn ln_exp_m1(&self) -> f32 {
+//         if *self <= crate::consts::f32::X1 {
+//             self.exp_m1().ln()
+//         } else if *self <= crate::consts::f32::X2 {
+//             *self - (-*self).exp()
+//         } else {
+//             *self
+//         }
+//     }
+
 //     fn logit(&self) -> f32 {
-//         (*self / (1.0_f32 - *self)).ln()
+//         (*self / (1.0 - *self)).ln()
 //     }
 
 //     fn inv_logit(&self) -> f32 {
-//         if *self < -103.27893_f32 {
-//             1.0_f32
+//         if *self < crate::consts::f32::ILOGIT_LOWER {
+//             1.0
 //         } else {
-//             if *self > 16.635532_f32 {
+//             if *self > crate::consts::f32::ILOGIT_UPPER {
 //                 1.0
 //             } else {
 //                 let e = self.exp();
@@ -124,9 +232,9 @@ impl LnExp for f64 {
 //         }
 //     }
 
-//     // fn ln_inv_logit(&self) -> f64 {
-//     //     -(-*self).ln_1p_exp()
-//     // }
+//     fn ln_inv_logit(&self) -> f32 {
+//         -(-*self).ln_1p_exp()
+//     }
 // }
 
 #[cfg(test)]
