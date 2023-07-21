@@ -104,6 +104,14 @@ macro_rules! impl_lnexp {
             fn ln_inv_logit(&self) -> $f {
                 -(-*self).ln_1p_exp()
             }
+
+            // fn logit_exp(&self) -> $f {
+            //     -(-*self).ln_exp_m1()
+            // }
+
+            fn ln_1m_inv_logit(&self) -> $f {
+                -self.ln_1p_exp()
+            }
         }
     };
 }
@@ -320,6 +328,36 @@ mod tests {
                 assert!((lhs - rhs).abs() < eps);
             }
         }
+
+        #[test]
+        fn ln_inv_logit_misc() {
+            let x: f64 = f64::INFINITY;
+            assert_eq!(x.ln_inv_logit(), -0.0);
+            let x: f64 = f64::NEG_INFINITY;
+            assert_eq!(x.ln_inv_logit(), f64::NEG_INFINITY);
+
+            let x: f64 = -745.0;
+            assert!(x.ln_inv_logit().is_finite());
+            let x: f64 = 50.0;
+            assert!(x.ln_inv_logit().is_finite());
+            let x: f64 = 745.0;
+            assert!(x.ln_inv_logit().is_finite());
+        }
+
+        #[test]
+        fn ln_1m_inv_logit_works() {
+            let x: f64 = f64::INFINITY;
+            assert_eq!(x.ln_1m_inv_logit(), f64::NEG_INFINITY);
+            let x: f64 = f64::NEG_INFINITY;
+            assert_eq!(x.ln_1m_inv_logit(), -0.0);
+
+            let x: f64 = -745.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
+            let x: f64 = 50.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
+            let x: f64 = 745.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
+        }
     }
 
     #[cfg(test)]
@@ -529,6 +567,36 @@ mod tests {
                 let rhs = x.inv_logit().ln();
                 assert!((lhs - rhs).abs() < eps);
             }
+        }
+
+        #[test]
+        fn ln_inv_logit_misc() {
+            let x: f32 = f32::INFINITY;
+            assert_eq!(x.ln_inv_logit(), -0.0);
+            let x: f32 = f32::NEG_INFINITY;
+            assert_eq!(x.ln_inv_logit(), f32::NEG_INFINITY);
+
+            let x: f32 = -103.0;
+            assert!(x.ln_inv_logit().is_finite());
+            let x: f32 = 35.0;
+            assert!(x.ln_inv_logit().is_finite());
+            let x: f32 = 103.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
+        }
+
+        #[test]
+        fn ln_1m_inv_logit_works() {
+            let x: f32 = f32::INFINITY;
+            assert_eq!(x.ln_1m_inv_logit(), f32::NEG_INFINITY);
+            let x: f32 = f32::NEG_INFINITY;
+            assert_eq!(x.ln_1m_inv_logit(), -0.0);
+
+            let x: f32 = -103.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
+            let x: f32 = 35.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
+            let x: f32 = 103.0;
+            assert!(x.ln_1m_inv_logit().is_finite());
         }
     }
 }
