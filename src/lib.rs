@@ -187,6 +187,10 @@ mod tests {
             let x: f64 = 2.0;
             assert!((x.ln_1p_exp().ln_exp_m1() - x).abs() <= 2.0 * eps);
 
+            // When naive method overflows
+            let x: f64 = (1023.0 * (2.0_f64).ln()) + 1.0;
+            assert!(x.ln_1p_exp().is_finite());
+
             let xs: Vec<f64> = vec![1e2, 1e3, 1e4, 1e5];
             for x in xs {
                 assert!((x.ln_1p_exp() - x).abs() < eps);
@@ -221,6 +225,9 @@ mod tests {
 
             let x: f64 = f64::INFINITY;
             assert_eq!(x.ln_exp_m1(), f64::INFINITY);
+
+            let x: f64 = (1023.0 * (2.0_f64).ln()) + 1.0;
+            assert!(x.ln_exp_m1().is_finite());
         }
 
         #[test]
@@ -386,6 +393,10 @@ mod tests {
             let x: f32 = -1.0;
             assert!((x.ln_1p_exp() - (e.ln_1p() - 1.0)).abs() < eps);
 
+            // When naive method overflows
+            let x: f32 = (127.0 * (2.0_f32).ln()) + 1.0;
+            assert!(x.ln_1p_exp().is_finite());
+
             let xs: Vec<f32> = vec![1e2, 1e3, 1e4, 1e5];
             for x in xs {
                 assert!((x.ln_1p_exp() - x).abs() < eps);
@@ -420,6 +431,10 @@ mod tests {
 
             let x: f32 = f32::INFINITY;
             assert_eq!(x.ln_exp_m1(), f32::INFINITY);
+
+            // When naive method overflows
+            let x: f32 = (127.0 * (2.0_f32).ln()) + 1.0;
+            assert!(x.ln_exp_m1().is_finite());
         }
 
         #[test]
