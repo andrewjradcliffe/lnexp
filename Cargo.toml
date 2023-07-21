@@ -2,7 +2,11 @@
 name = "lnexp"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Andrew Radcliffe <andrewjradcliffe@gmail.com>"]
+description = "Carefully evaluate compositions of log, exp, log1p and expm1"
+repository = "https://github.com/andrewjradcliffe/lnexp/"
+license = "MIT OR Apache-2.0"
+keywords = ["math", "libm", "numerics"]
+categories = ["mathematics", "algorithms"]
 
 [dependencies]
