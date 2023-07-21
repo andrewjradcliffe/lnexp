@@ -4,6 +4,7 @@ pub trait LnExp {
     /// Returns `ln(1 - exp(x))`, computed as described in
     /// Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
     /// http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+    /// For x > 0, the result is undefined, hence, the return value is `nan`.
     fn ln_1m_exp(&self) -> Self;
 
     /// Returns `ln(1 + exp(x))`, computed as described in Maechler (2012).
@@ -128,6 +129,22 @@ mod tests {
 
             let x: f64 = -0.1;
             assert_eq!(x.ln_1m_exp(), (-x.exp_m1()).ln());
+
+            // limits
+            let x: f64 = f64::NEG_INFINITY;
+            assert_eq!(x.ln_1m_exp(), -0.0); // -0.0 due to log1p(-0.0)
+
+            let x: f64 = 0.0;
+            assert_eq!(x.ln_1m_exp(), f64::NEG_INFINITY);
+
+            let x: f64 = -0.0;
+            assert_eq!(x.ln_1m_exp(), f64::NEG_INFINITY);
+
+            let x: f64 = 5.0e-324;
+            assert!(x.ln_1m_exp().is_nan());
+
+            let x: f64 = -5.0e-324;
+            assert!(x.ln_1m_exp().is_finite());
         }
 
         #[test]
