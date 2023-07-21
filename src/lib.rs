@@ -154,6 +154,7 @@ mod tests {
                 f64::NEG_INFINITY,
                 0.0,
                 1.0,
+                3.0,
                 -50.0,
                 -37.0,
                 18.0,
@@ -179,6 +180,9 @@ mod tests {
             let x: f64 = -1.0;
             assert!((x.ln_1p_exp() - (e.ln_1p() - 1.0)).abs() < eps);
 
+            let x: f64 = 2.0;
+            assert!((x.ln_1p_exp().ln_exp_m1() - x).abs() <= 2.0 * eps);
+
             let xs: Vec<f64> = vec![1e2, 1e3, 1e4, 1e5];
             for x in xs {
                 assert!((x.ln_1p_exp() - x).abs() < eps);
@@ -191,19 +195,42 @@ mod tests {
         }
 
         #[test]
+        fn ln_exp_m1_identity() {
+            let xs: Vec<f64> = vec![f64::INFINITY, 0.0, 1.0, 18.0, 33.3, 50.0];
+            for x in xs {
+                assert_eq!(x.ln_exp_m1().ln_1p_exp(), x);
+            }
+        }
+
+        #[test]
+        fn ln_exp_m1_misc() {
+            // limits
+            let x: f64 = 0.0;
+            assert_eq!(x.ln_exp_m1(), f64::NEG_INFINITY);
+            let x: f64 = -0.0;
+            assert_eq!(x.ln_exp_m1(), f64::NEG_INFINITY);
+
+            let x: f64 = -5.0e-324;
+            assert!(x.ln_exp_m1().is_nan());
+
+            let x: f64 = f64::INFINITY;
+            assert_eq!(x.ln_exp_m1(), f64::INFINITY);
+        }
+
+        #[test]
         fn logit_identity() {
             let eps = f64::EPSILON;
-            let xs: Vec<f64> = vec![5e-324, 0.0, 0.5, 1.0 - eps, 1.0 - eps / 2.0, 1.0];
+            let xs: Vec<f64> = vec![5.0e-324, 0.0, 0.5, 1.0 - eps, 1.0 - eps / 2.0, 1.0];
             for x in xs {
                 assert_eq!(x.logit().inv_logit(), x);
             }
 
             // Approximate identity
-            let xs: Vec<f64> = vec![eps, eps / 2.0, 0.5 - eps, 0.5 + eps];
+            let xs: Vec<f64> = vec![eps / 2.0, eps, 0.5 - eps, 0.5 + eps];
             let epsilons: Vec<f64> = vec![
                 // eps^(3/2) is a loose but acceptable alternative to eps^2
-                eps * eps.sqrt(),
                 eps * eps.sqrt() / 2.0,
+                eps * eps.sqrt(),
                 eps / 2.0,
                 eps / 2.0,
             ];
