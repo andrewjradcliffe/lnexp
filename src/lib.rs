@@ -283,25 +283,204 @@ mod tests {
 
         #[test]
         fn ln_inv_logit_works() {
-            // let eps = f64::EPSILON;
-            let xs: Vec<f64> = vec![
-                f64::INFINITY,
-                f64::NEG_INFINITY,
-                // f64::EPSILON,
-                0.0,
-                // 1.0,
-                -50.0,
-                -37.0,
-                // 18.0,
-                // 33.3,
-                // 50.0,
-            ];
+            let xs: Vec<f64> = vec![f64::INFINITY, f64::NEG_INFINITY, 0.0, -50.0, -37.0];
 
             for x in xs {
                 let lhs = x.ln_inv_logit();
                 let rhs = x.inv_logit().ln();
                 assert_eq!(lhs, rhs);
-                // assert!((lhs - rhs).abs() < eps);
+            }
+
+            let eps = f64::EPSILON;
+            let xs: Vec<f64> = vec![eps, 1.0, 18.0, 33.3, 50.0];
+
+            for x in xs {
+                let lhs = x.ln_inv_logit();
+                let rhs = x.inv_logit().ln();
+                assert!((lhs - rhs).abs() < eps);
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod f32_impl {
+        use super::*;
+
+        #[test]
+        fn ln_1m_exp_works() {
+            let x: f32 = -1e-20;
+            assert!(x.ln_1m_exp().is_finite());
+
+            let x: f32 = -1.0;
+            assert_eq!(x.ln_1m_exp(), (-x.exp()).ln_1p());
+
+            let x: f32 = -0.1;
+            assert_eq!(x.ln_1m_exp(), (-x.exp_m1()).ln());
+
+            // limits
+            let x: f32 = f32::NEG_INFINITY;
+            assert_eq!(x.ln_1m_exp(), -0.0); // -0.0 due to log1p(-0.0)
+
+            let x: f32 = 0.0;
+            assert_eq!(x.ln_1m_exp(), f32::NEG_INFINITY);
+
+            let x: f32 = -0.0;
+            assert_eq!(x.ln_1m_exp(), f32::NEG_INFINITY);
+
+            let x: f32 = 1.0e-45;
+            assert!(x.ln_1m_exp().is_nan());
+
+            let x: f32 = -1.0e-45;
+            assert!(x.ln_1m_exp().is_finite());
+        }
+
+        #[test]
+        fn ln_1p_exp_identity() {
+            let xs: Vec<f32> = vec![
+                f32::INFINITY,
+                f32::NEG_INFINITY,
+                0.0,
+                2.0,
+                3.0,
+                -50.0,
+                -37.0,
+                18.0,
+                33.3,
+                50.0,
+            ];
+            for x in xs {
+                assert_eq!(x.ln_1p_exp().ln_exp_m1(), x);
+            }
+            let x: f32 = 1.0;
+            assert_eq!(x.ln_1p_exp().ln_exp_m1(), x - f32::EPSILON);
+        }
+
+        #[test]
+        fn ln_1p_exp_misc() {
+            let ln2 = std::f32::consts::LN_2;
+            let eps = f32::EPSILON;
+            let x: f32 = 0.0;
+            assert!((x.ln_1p_exp() - ln2).abs() < eps);
+
+            let e = std::f32::consts::E;
+            let x: f32 = 1.0;
+            assert!((x.ln_1p_exp() - e.ln_1p()).abs() < eps);
+
+            let x: f32 = -1.0;
+            assert!((x.ln_1p_exp() - (e.ln_1p() - 1.0)).abs() < eps);
+
+            let xs: Vec<f32> = vec![1e2, 1e3, 1e4, 1e5];
+            for x in xs {
+                assert!((x.ln_1p_exp() - x).abs() < eps);
+            }
+
+            let xs: Vec<f32> = vec![-1e3, -1e4, -1e5];
+            for x in xs {
+                assert_eq!(x.ln_1p_exp(), 0.0);
+            }
+        }
+
+        #[test]
+        fn ln_exp_m1_identity() {
+            let xs: Vec<f32> = vec![f32::INFINITY, 0.0, 1.0, 18.0, 33.3, 50.0];
+            for x in xs {
+                assert_eq!(x.ln_exp_m1().ln_1p_exp(), x);
+            }
+        }
+
+        #[test]
+        fn ln_exp_m1_misc() {
+            // limits
+            let x: f32 = 0.0;
+            assert_eq!(x.ln_exp_m1(), f32::NEG_INFINITY);
+            let x: f32 = -0.0;
+            assert_eq!(x.ln_exp_m1(), f32::NEG_INFINITY);
+
+            let x: f32 = -1.0e-45;
+            assert!(x.ln_exp_m1().is_nan());
+
+            let x: f32 = f32::INFINITY;
+            assert_eq!(x.ln_exp_m1(), f32::INFINITY);
+        }
+
+        #[test]
+        fn logit_identity() {
+            let eps = f32::EPSILON;
+            let xs: Vec<f32> = vec![1.0e-45, 0.0, 0.5, 1.0 - eps, 1.0];
+            for x in xs {
+                assert_eq!(x.logit().inv_logit(), x);
+            }
+
+            // Approximate identity
+            let xs: Vec<f32> = vec![eps / 2.0, eps, 0.5 - eps, 0.5 + eps, 1.0 - eps / 2.0];
+            for x in xs {
+                assert!((x.logit().inv_logit() - x).abs() < eps);
+            }
+        }
+
+        #[test]
+        fn inv_logit_misc() {
+            let x: f32 = f32::INFINITY;
+            assert_eq!(x.inv_logit(), 1.0);
+
+            let x: f32 = f32::NEG_INFINITY;
+            assert_eq!(x.inv_logit(), 0.0);
+
+            let x: f32 = -103.0;
+            assert!(x.inv_logit() > 0.0);
+
+            let x: f32 = 16.0;
+            assert!(x.inv_logit() < 1.0);
+
+            let x: f32 = 0.5;
+            assert_eq!(x.logit(), 0.0);
+
+            let eps = f32::EPSILON;
+            let x: f32 = 2.0;
+            assert!((x.inv_logit() - 1.0 / (1.0 + (-2.0_f32).exp())).abs() < eps);
+            assert!((x.inv_logit().logit() - 2.0) < eps);
+        }
+
+        #[test]
+        fn logit_smooth_upper_bound() {
+            let x: f32 = 16.63553;
+            assert_eq!(x.inv_logit(), 1.0 - f32::EPSILON / 2.0);
+
+            // This is the bound, but, exp(x) / (1.0 + exp(x)) rounds to 1.0
+            let x: f32 = 16.635532;
+            assert_eq!(x.inv_logit(), 1.0);
+
+            let x: f32 = 16.635534;
+            assert_eq!(x.inv_logit(), 1.0);
+        }
+
+        #[test]
+        fn logit_smooth_lower_bound() {
+            let x: f32 = 1.0e-45;
+            let rhs: f32 = -103.27893;
+            assert_eq!(x.logit(), rhs);
+
+            let x: f32 = -103.27894;
+            assert_eq!(x.inv_logit(), 0.0);
+        }
+
+        #[test]
+        fn ln_inv_logit_works() {
+            let xs: Vec<f32> = vec![f32::INFINITY, f32::NEG_INFINITY, 0.0, -50.0, -37.0];
+
+            for x in xs {
+                let lhs = x.ln_inv_logit();
+                let rhs = x.inv_logit().ln();
+                assert_eq!(lhs, rhs);
+            }
+
+            let eps = f32::EPSILON;
+            let xs: Vec<f32> = vec![eps, 1.0, 18.0, 33.3, 50.0];
+
+            for x in xs {
+                let lhs = x.ln_inv_logit();
+                let rhs = x.inv_logit().ln();
+                assert!((lhs - rhs).abs() < eps);
             }
         }
     }
