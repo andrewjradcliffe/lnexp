@@ -23,7 +23,10 @@ pub trait LnExp {
     /// more carefully than the composition of functions `x.inv_logit().ln()`.
     fn ln_inv_logit(&self) -> Self;
 }
+
 macro_rules! impl_lnexp {
+    // N.B. the comments below are written for the `f64` implementation;
+    // identical logic is applied to the `f32` case.
     ( $f:ident ) => {
         impl LnExp for $f {
             // See: Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
