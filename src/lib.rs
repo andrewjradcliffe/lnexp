@@ -254,11 +254,17 @@ mod tests {
             let x: f64 = f64::NEG_INFINITY;
             assert_eq!(x.inv_logit(), 0.0);
 
+            let x: f64 = -745.0;
+            assert_eq!(x.inv_logit(), 0.0);
+
             let x: f64 = -744.0;
             assert!(x.inv_logit() > 0.0);
 
             let x: f64 = 36.0;
             assert!(x.inv_logit() < 1.0);
+
+            let x: f64 = 37.0;
+            assert_eq!(x.inv_logit(), 1.0);
 
             let x: f64 = 0.5;
             assert_eq!(x.logit(), 0.0);
@@ -446,11 +452,17 @@ mod tests {
             let x: f32 = f32::NEG_INFINITY;
             assert_eq!(x.inv_logit(), 0.0);
 
+            let x: f32 = -104.0;
+            assert_eq!(x.inv_logit(), 0.0);
+
             let x: f32 = -103.0;
             assert!(x.inv_logit() > 0.0);
 
             let x: f32 = 16.0;
             assert!(x.inv_logit() < 1.0);
+
+            let x: f32 = 17.0;
+            assert_eq!(x.inv_logit(), 1.0);
 
             let x: f32 = 0.5;
             assert_eq!(x.logit(), 0.0);
