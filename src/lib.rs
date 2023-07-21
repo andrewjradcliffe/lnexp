@@ -2,27 +2,139 @@ mod consts;
 
 pub trait LnExp {
     /// Returns `ln(1 - exp(x))`, computed as described in
-    /// Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))
-    /// http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
+    /// [Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))](http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf).
     /// For x > 0, the result is undefined, hence, the return value is `nan`.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = -1e-20;
+    /// assert!(x.ln_1m_exp().is_finite());
+    /// // compare with the naive computation
+    /// assert!((-x.exp()).ln_1p().is_infinite());
+    ///
+    /// let x: f64 = -50.0
+    /// assert_neq!(x.ln_1m_exp(), 0.0);
+    /// // the result if we blindly applied `log(-expm1(x))` to the entire range
+    /// assert_eq!((-x.exp_m1()).ln(), 0.0);
+    /// ```
     fn ln_1m_exp(&self) -> Self;
 
-    /// Returns `ln(1 + exp(x))`, computed as described in Maechler (2012).
+    /// Returns `ln(1 + exp(x))`, computed as described in Maechler (2012),
+    /// for which a theoretical basis has been provided by [cossio (2022)](https://github.com/JuliaStats/LogExpFunctions.jl/files/8218470/log1pexp.pdf).
+    /// The inverse of this function is `ln_exp_m1`.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = (1023.0 * (2.0_f64).ln()) + 1.0;
+    /// assert!(x.ln_1p_exp().is_finite());
+    /// // compare with naive computation
+    /// assert_eq!(x.exp().ln_1p(), f64::INFINITY);
+    /// ```
     fn ln_1p_exp(&self) -> Self;
 
     /// Returns `ln(exp(x) - 1)`, the inverse of `ln_1p_exp`, computed by inverting
     /// the case analysis described in Maechler (2012).
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = (1023.0 * (2.0_f64).ln()) + 1.0;
+    /// assert!(x.ln_exp_m1().is_finite());
+    /// // compare with naive computation
+    /// assert_eq!(x.exp_m1().ln(), f64::INFINITY);
+    /// ```
     fn ln_exp_m1(&self) -> Self;
 
     /// Returns the logit, mapping from the closed interval [0,1] to a real number.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = 1.0;
+    /// assert_eq!(x.logit(), f64::INFINITY);
+    ///
+    /// let x: f64 = 0.5;
+    /// assert_eq!(x.logit(), 0.0);
+    ///
+    /// let x: f64 = 0.0;
+    /// assert_eq!(x.logit(), f64::NEG_INFINITY);
+    /// ```
     fn logit(&self) -> Self;
 
     /// Returns the inverse-logit mapping from a real number to the closed interval [0,1].
+    /// This is the inverse of `logit`.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = f64::INFINITY;
+    /// assert_eq!(x.inv_logit(), 1.0);
+    ///
+    /// let x: f64 = 0.0;
+    /// assert_eq!(x.inv_logit(), 0.5);
+    ///
+    /// let x: f64 = f64::NEG_INFINITY;
+    /// assert_eq!(x.inv_logit(), 0.0);
+    ///
+    /// // Smooth lower bound by enforcing that values less than
+    /// // `logit(5.0e-324)` (`logit(1.0e-45)` if `f32`) map to 0.0
+    /// // when the inverse-logit is applied.
+    /// let x: f64 = -745.0; // Slightly less than lower bound
+    /// assert_eq!(x.inv_logit(), 0.0);
+    /// // compare with naive computation
+    /// let e = x.exp();
+    /// assert_neq!(e / (1.0 + e), 0.0);
+    ///
+    /// // Smooth upper bound by enforcing that values greater than
+    /// // `logit(1.0 - epsilon/2.0)` map to 1.0 when the inverse-logit is applied.
+    /// let x: f64 = 36.8; // Slightly larger than upper bound
+    /// assert_eq!(x.inv_logit(), 1.0);
+    /// // compare with naive computation
+    /// let e = x.exp();
+    /// assert_neq!(e / (1.0 + e), 1.0);
+    /// ```
     fn inv_logit(&self) -> Self;
 
-    /// Returns the natural logarithm of the inv_logit function, computed
+    /// Returns the natural logarithm of the inverse-logit function, computed
     /// more carefully than the composition of functions `x.inv_logit().ln()`.
+    /// This utilizes the identity `log(inv_logit(x)) = -log(1 + exp(-x))`
+    /// to compute the result via `ln_1p_exp`.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = -745.0;
+    /// assert!(x.ln_inv_logit().is_finite());
+    /// // compare with naive computation
+    /// assert_eq!(x.inv_logit().ln(), f64::NEG_INFINITY);
+    /// ```
     fn ln_inv_logit(&self) -> Self;
+
+    // fn logit_exp(&self) -> Self;
+
+    /// Returns the natural logarithm of the 1 minus the inverse logit function,
+    /// computed more carefully and with fewer function calls than the
+    /// composition of functions `(1.0 - x.inv_logit()).ln()`. This exploits negation
+    /// in the log-odds domain to compute the result via `ln_1p_exp`,
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = 50.0;
+    /// assert!(x.ln_1m_inv_logit().is_finite());
+    /// // compare with naive computation
+    /// assert_eq!((1.0 - x.inv_logit()).ln(), f64::NEG_INFINITY);
+    /// ```
+    fn ln_1m_inv_logit(&self) -> Self;
 }
 
 macro_rules! impl_lnexp {
@@ -84,8 +196,8 @@ macro_rules! impl_lnexp {
                     // than ldexp(1.0, 53). When 1.0 is added to the
                     // exponentiated value, rounding causes the denominator to
                     // increase, leading to a value which is 2^-53 smaller
-                    // than that computed from 36.7368005696771. Several of
-                    // theThe function is no longer monotonic, thus, this is a
+                    // than that computed from 36.7368005696771.
+                    // The function is no longer monotonic, thus, this is a
                     // suitable cutpoint.  In other words, logit(1.0 -
                     // f64::EPSILON / 2.0) = 36.7368005696771, thus, as the
                     // next linear-scale input (1.0) to `logit` maps to +inf,
