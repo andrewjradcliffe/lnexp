@@ -1,6 +1,8 @@
 pub mod f64 {
     // Improved thresholds for `ln_1p_exp` based on
     // https://github.com/JuliaStats/LogExpFunctions.jl/files/8218470/log1pexp.pdf
+    // which is itself a derivative of
+    // http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
     use std::f64::consts::LN_2;
     const PRECISION: f64 = f64::MANTISSA_DIGITS as f64;
     const LN_P_LN2: f64 = 3.6037789929704576; // p_ln2.ln()
