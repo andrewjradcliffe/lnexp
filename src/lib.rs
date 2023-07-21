@@ -19,8 +19,8 @@ pub trait LnExp {
     /// // compare with the naive computation
     /// assert!((-x.exp()).ln_1p().is_infinite());
     ///
-    /// let x: f64 = -50.0
-    /// assert_neq!(x.ln_1m_exp(), 0.0);
+    /// let x: f64 = -50.0;
+    /// assert_ne!(x.ln_1m_exp(), 0.0);
     /// // the result if we blindly applied `log(-expm1(x))` to the entire range
     /// assert_eq!((-x.exp_m1()).ln(), 0.0);
     /// ```
@@ -95,7 +95,7 @@ pub trait LnExp {
     /// assert_eq!(x.inv_logit(), 0.0);
     /// // compare with naive computation
     /// let e = x.exp();
-    /// assert_neq!(e / (1.0 + e), 0.0);
+    /// assert_ne!(e / (1.0 + e), 0.0);
     ///
     /// // Smooth upper bound by enforcing that values greater than
     /// // `logit(1.0 - epsilon / 2.0)` map to 1.0 when the inverse-logit is applied.
@@ -103,7 +103,7 @@ pub trait LnExp {
     /// assert_eq!(x.inv_logit(), 1.0);
     /// // compare with naive computation
     /// let e = x.exp();
-    /// assert_neq!(e / (1.0 + e), 1.0);
+    /// assert_ne!(e / (1.0 + e), 1.0);
     /// ```
     fn inv_logit(&self) -> Self;
 
