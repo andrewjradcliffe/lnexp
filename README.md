@@ -4,7 +4,8 @@
 
 Provides a trait (`LnExp`) for floating-point types to perform careful
 evaluation of compositions of `ln`, `ln_1p`, `exp` and `exp_m1`.
-Implementations are provided for `f64` and `f32`.
+Implementations are provided for `f64` and `f32`; see the
+documentation for details.
 
 ## License
 
@@ -23,4 +24,4 @@ dual licensed as above, without any additional terms or conditions.
 
 ## Citations
 - [Martin Maechler (2012), Accurately Computing log(1 − exp(− |a|))](http://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf)
-- [cossio (2022)](https://github.com/JuliaStats/LogExpFunctions.jl/files/8218470/log1pexp.pdf)
+- [cossio (2022), untitled](https://github.com/JuliaStats/LogExpFunctions.jl/files/8218470/log1pexp.pdf)
