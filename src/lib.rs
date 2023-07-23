@@ -274,6 +274,13 @@ mod tests {
             assert!(x.ln_1m_exp().is_finite());
             let x: f64 = -f64::MIN_POSITIVE;
             assert!(x.ln_1m_exp().is_finite());
+
+            // its own inverse
+            let x: f64 = -0.5;
+            assert_eq!(x.ln_1m_exp().ln_1m_exp(), x);
+
+            let x: f64 = -f64::EPSILON;
+            assert!((x.ln_1m_exp().ln_1m_exp() - x).abs() < 6.0e-31);
         }
 
         #[test]
@@ -511,6 +518,13 @@ mod tests {
             assert!(x.ln_1m_exp().is_finite());
             let x: f32 = -f32::MIN_POSITIVE;
             assert!(x.ln_1m_exp().is_finite());
+
+            // its own inverse
+            let x: f32 = -0.5;
+            assert_eq!(x.ln_1m_exp().ln_1m_exp(), x);
+
+            let x: f32 = -f32::EPSILON;
+            assert!((x.ln_1m_exp().ln_1m_exp() - x).abs() < 6.0e-14);
         }
 
         #[test]
