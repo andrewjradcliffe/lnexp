@@ -165,7 +165,7 @@ pub trait LnExp {
     /// use lnexp::LnExp;
     ///
     /// let x: f64 = 50.0;
-    /// assert_eq!(x.ln_inv_logit().logit_exp(), x);
+    /// assert_eq!(x.ln_1m_inv_logit().logit_1m_exp(), x);
     /// let x: f64 = 743.0;
     /// assert!(x.ln_1m_inv_logit().is_finite());
     /// // compare with naive computation
