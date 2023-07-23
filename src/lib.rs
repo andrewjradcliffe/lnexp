@@ -21,8 +21,12 @@ pub trait LnExp {
     ///
     /// let x: f64 = -50.0;
     /// assert_ne!(x.ln_1m_exp(), 0.0);
-    /// // the result if we blindly applied `log(-expm1(x))` to the entire range
+    /// // the result if we blindly applied `ln(-exp_m1(x))` to the entire range
     /// assert_eq!((-x.exp_m1()).ln(), 0.0);
+    ///
+    /// // An interesting property: the inverse of `ln_1m_exp` is `ln_1m_exp`.
+    /// let x: f64 = -2.0;
+    /// assert_eq!(x.ln_1m_exp().ln_1m_exp(), x);
     /// ```
     fn ln_1m_exp(&self) -> Self;
 
@@ -109,7 +113,7 @@ pub trait LnExp {
 
     /// Returns the natural logarithm of the inverse-logit function, computed
     /// more carefully than the composition of functions `x.inv_logit().ln()`.
-    /// This utilizes the identity `log(inv_logit(x)) = -log(1 + exp(-x))`
+    /// This utilizes the identity `ln(inv_logit(x)) = -ln(1 + exp(-x))`
     /// to compute the result via `ln_1p_exp`.
     ///
     /// # Examples
