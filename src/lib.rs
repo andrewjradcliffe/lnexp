@@ -123,7 +123,22 @@ pub trait LnExp {
     /// ```
     fn ln_inv_logit(&self) -> Self;
 
-    // fn logit_exp(&self) -> Self;
+    /// Returns the logit of the exponential of `self`, i.e. `logit(exp(x))`,
+    /// computed more carefully and with fewer function calls than the composition.
+    /// This is the inverse of `ln_inv_logit`.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = 50.0;
+    /// assert_eq!(x.ln_inv_logit().logit_exp(), x);
+    /// let x: f64 = 743.0;
+    /// assert!(x.ln_inv_logit().logit_exp().is_finite());
+    /// // compare with naive computation
+    /// assert_eq!(x.ln_inv_logit().exp().logit(), f64::INFINITY);
+    /// ```
+    fn logit_exp(&self) -> Self;
 
     /// Returns the natural logarithm of the 1 minus the inverse logit function,
     /// computed more carefully and with fewer function calls than the
@@ -140,6 +155,23 @@ pub trait LnExp {
     /// assert_eq!((1.0 - x.inv_logit()).ln(), f64::NEG_INFINITY);
     /// ```
     fn ln_1m_inv_logit(&self) -> Self;
+
+    /// Returns the logit of 1 minus the exponential of `self`, i.e.
+    /// `logit(1 - exp(x))`, computed more carefully and with fewer function calls
+    /// than the composition. This is the inverse of `ln_1m_inv_logit`.
+    ///
+    /// # Examples
+    /// ```
+    /// use lnexp::LnExp;
+    ///
+    /// let x: f64 = 50.0;
+    /// assert_eq!(x.ln_inv_logit().logit_exp(), x);
+    /// let x: f64 = 743.0;
+    /// assert!(x.ln_1m_inv_logit().is_finite());
+    /// // compare with naive computation
+    /// assert_eq!((1.0 - x.ln_1m_inv_logit().exp()).logit(), f64::INFINITY);
+    /// ```
+    fn logit_1m_exp(&self) -> Self;
 }
 
 macro_rules! impl_lnexp {
@@ -222,12 +254,17 @@ macro_rules! impl_lnexp {
                 -(-*self).ln_1p_exp()
             }
 
-            // fn logit_exp(&self) -> $f {
-            //     -(-*self).ln_exp_m1()
-            // }
+            fn logit_exp(&self) -> $f {
+                // -(-*self).ln_exp_m1()
+                *self - self.ln_1m_exp()
+            }
 
             fn ln_1m_inv_logit(&self) -> $f {
                 -self.ln_1p_exp()
+            }
+
+            fn logit_1m_exp(&self) -> $f {
+                self.ln_1m_exp() - *self
             }
         }
     };
@@ -469,6 +506,24 @@ mod tests {
         }
 
         #[test]
+        fn logit_exp_works() {
+            let eps = f64::EPSILON;
+            let xs: Vec<f64> = vec![eps, eps.sqrt(), 0.2, 0.4, 0.8, 1.0 - eps.sqrt(), 1.0 - eps];
+            let neg_xs: Vec<f64> = xs.iter().map(|&x| -x).collect();
+            for x in xs {
+                assert!((x.ln_inv_logit().logit_exp() - x).abs() < eps);
+            }
+            for x in neg_xs {
+                assert!((x.ln_inv_logit().logit_exp() - x).abs() < 2.0 * eps);
+            }
+
+            let xs: Vec<f64> = vec![-f64::NEG_INFINITY, 0.0, f64::INFINITY];
+            for x in xs {
+                assert_eq!(x.ln_inv_logit().logit_exp(), x);
+            }
+        }
+
+        #[test]
         fn ln_1m_inv_logit_works() {
             let x: f64 = f64::INFINITY;
             assert_eq!(x.ln_1m_inv_logit(), f64::NEG_INFINITY);
@@ -481,6 +536,24 @@ mod tests {
             assert!(x.ln_1m_inv_logit().is_finite());
             let x: f64 = 745.0;
             assert!(x.ln_1m_inv_logit().is_finite());
+        }
+
+        #[test]
+        fn logit_1m_exp_works() {
+            let eps = f64::EPSILON;
+            let xs: Vec<f64> = vec![eps, eps.sqrt(), 0.2, 0.4, 0.8, 1.0 - eps.sqrt(), 1.0 - eps];
+            let neg_xs: Vec<f64> = xs.iter().map(|&x| -x).collect();
+            for x in xs {
+                assert!((x.ln_1m_inv_logit().logit_1m_exp() - x).abs() < 2.0 * eps);
+            }
+            for x in neg_xs {
+                assert!((x.ln_1m_inv_logit().logit_1m_exp() - x).abs() < eps);
+            }
+
+            let xs: Vec<f64> = vec![-f64::NEG_INFINITY, 0.0, f64::INFINITY];
+            for x in xs {
+                assert_eq!(x.ln_1m_inv_logit().logit_1m_exp(), x);
+            }
         }
     }
 
@@ -716,6 +789,24 @@ mod tests {
         }
 
         #[test]
+        fn logit_exp_works() {
+            let eps = f32::EPSILON;
+            let xs: Vec<f32> = vec![eps, eps.sqrt(), 0.2, 0.4, 0.8, 1.0 - eps.sqrt(), 1.0 - eps];
+            let neg_xs: Vec<f32> = xs.iter().map(|&x| -x).collect();
+            for x in xs {
+                assert!((x.ln_inv_logit().logit_exp() - x).abs() < 2.0 * eps);
+            }
+            for x in neg_xs {
+                assert!((x.ln_inv_logit().logit_exp() - x).abs() < 2.0 * eps);
+            }
+
+            let xs: Vec<f32> = vec![-f32::NEG_INFINITY, 0.0, f32::INFINITY];
+            for x in xs {
+                assert_eq!(x.ln_inv_logit().logit_exp(), x);
+            }
+        }
+
+        #[test]
         fn ln_1m_inv_logit_works() {
             let x: f32 = f32::INFINITY;
             assert_eq!(x.ln_1m_inv_logit(), f32::NEG_INFINITY);
@@ -728,6 +819,24 @@ mod tests {
             assert!(x.ln_1m_inv_logit().is_finite());
             let x: f32 = 103.0;
             assert!(x.ln_1m_inv_logit().is_finite());
+        }
+
+        #[test]
+        fn logit_1m_exp_works() {
+            let eps = f32::EPSILON;
+            let xs: Vec<f32> = vec![eps, eps.sqrt(), 0.2, 0.4, 0.8, 1.0 - eps.sqrt(), 1.0 - eps];
+            let neg_xs: Vec<f32> = xs.iter().map(|&x| -x).collect();
+            for x in xs {
+                assert!((x.ln_1m_inv_logit().logit_1m_exp() - x).abs() < 2.0 * eps);
+            }
+            for x in neg_xs {
+                assert!((x.ln_1m_inv_logit().logit_1m_exp() - x).abs() < 2.0 * eps);
+            }
+
+            let xs: Vec<f32> = vec![-f32::NEG_INFINITY, 0.0, f32::INFINITY];
+            for x in xs {
+                assert_eq!(x.ln_1m_inv_logit().logit_1m_exp(), x);
+            }
         }
     }
 }
