@@ -59,7 +59,7 @@ pub trait LnExp {
     /// ```
     fn ln_exp_m1(&self) -> Self;
 
-    /// Returns the logit, mapping from the closed interval \[0,1\] to a real number.
+    /// Returns the [logit](https://en.wikipedia.org/wiki/Logit), mapping from the closed interval \[0,1\] to a real number.
     ///
     /// # Examples
     /// ```
