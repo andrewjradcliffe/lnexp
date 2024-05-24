@@ -260,8 +260,8 @@ macro_rules! impl_lnexp {
 
             fn logit_exp(&self) -> $f {
                 // This uses the following identity:
-                // logit(exp(x)) = log(exp(x) / (1 + exp(x))) = log(exp(x)) - log(1 - exp(x))
-                *self - self.ln_1m_exp()
+                // logit(exp(x)) = log(exp(x) / (1 + exp(x))) = -log(exp(-x) - 1)
+                -(-*self).ln_exp_m1()
             }
 
             fn ln_1m_inv_logit(&self) -> $f {
@@ -270,9 +270,9 @@ macro_rules! impl_lnexp {
 
             fn logit_1m_exp(&self) -> $f {
                 // This uses the same identity as `logit_exp`, followed by negation
-                // on the log-odds scale.
-                // That is, -logit(exp(x)) = log(1 - exp(x)) - log(exp(x))
-                self.ln_1m_exp() - *self
+                // on the log-odds scale. That is,
+                // -logit(exp(x)) = logit(1 - exp(x)) = log((1 - exp(x)) / exp(x)) = log(exp(-x) - 1)
+                (-*self).ln_exp_m1()
             }
         }
     };

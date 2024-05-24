@@ -1,5 +1,16 @@
 # lnexp
 
+[![crate](https://img.shields.io/crates/v/lnexp.svg)](https://crates.io/crates/lnexp)
+[![documentation](https://docs.rs/lnexp/badge.svg)](https://docs.rs/lnexp)
+
+## Usage
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+lnexp = "0.2"
+```
+
 ## Description
 
 Provides a trait (`LnExp`) for floating-point types to perform careful
